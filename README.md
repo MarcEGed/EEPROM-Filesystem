@@ -7,4 +7,4 @@ Practically useless, but fun project.
 
 ## Demo
 
-![EEPROM GUI Demo](Demo\ui.png)
+![EEPROM GUI Demo](Demo/ui.png)
