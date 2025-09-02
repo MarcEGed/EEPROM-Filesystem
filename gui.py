@@ -1,5 +1,6 @@
 """
-Minimal, modern, dark Tkinter GUI for Arduino EEPROM files.
+GUI for arduinoDrive.ino
+allows for a more comfortable use of the arduino filesystem
 Requires: pip install pyserial
 """
 
@@ -9,13 +10,13 @@ from tkinter.scrolledtext import ScrolledText
 import serial
 import time
 
-# ===== CONFIG =====
+#Config
 PORT_DEFAULT = "COM9"
 BAUD = 9600
 FILE_COUNT = 3
 READ_TIMEOUT = 0.5
 
-# ===== Utilities =====
+#Utilities
 def escape_for_arduino(s: str) -> str:
     s = s.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r')
     return s
@@ -38,7 +39,7 @@ def unescape_from_arduino(s: str) -> str:
 def bytes_to_text(b: bytes) -> str:
     return ''.join(chr(x) if 32 <= x <= 126 or x in (10,) else '' for x in b)
 
-# ===== Serial Client =====
+#Serial Client
 class SerialClient:
     def __init__(self, port=PORT_DEFAULT, baud=BAUD, timeout=0.1):
         self.port = port
@@ -72,7 +73,7 @@ class SerialClient:
             else: time.sleep(0.01)
         return buf
 
-# ===== GUI =====
+#GUI
 class ModernEEPROM(tk.Tk):
     BG = "#111217"
     FG = "#E6EEF3"
@@ -96,7 +97,6 @@ class ModernEEPROM(tk.Tk):
         except:
             self._set_status("Not connected")
 
-    # ----- Style -----
     def _build_style(self):
         style = ttk.Style(self)
         style.theme_use('clam')
@@ -117,7 +117,6 @@ class ModernEEPROM(tk.Tk):
                   foreground=[('selected', self.BG)])
         style.configure("Status.TLabel", background=self.BG, foreground=self.MUTED)
 
-    # ----- UI -----
     def _build_ui(self):
         # Top toolbar
         top = ttk.Frame(self)
@@ -171,12 +170,12 @@ class ModernEEPROM(tk.Tk):
         self.footer_lbl = ttk.Label(bottom, text="Ready", style="Status.TLabel")
         self.footer_lbl.pack(side='left')
 
-    # ----- Status -----
+    #Status
     def _set_status(self, txt):
         self.status_lbl.config(text=txt)
         self.footer_lbl.config(text=txt)
 
-    # ----- Connection -----
+    #Connection
     def toggle_connect(self):
         if self.client.is_open():
             self.client.close()
@@ -197,7 +196,7 @@ class ModernEEPROM(tk.Tk):
                 messagebox.showerror("Failed", f"Could not open {port}\n{e}")
                 self._set_status("Not connected")
 
-    # ----- File Operations -----
+    #File Operations
     def refresh_files(self):
         if not self.client.is_open():
             return
@@ -263,7 +262,6 @@ class ModernEEPROM(tk.Tk):
         self._set_status(f"Deleted file {idx}")
         self.refresh_files()
 
-# ===== Run =====
 if __name__ == "__main__":
     app = ModernEEPROM()
     app.mainloop()

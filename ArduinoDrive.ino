@@ -1,53 +1,61 @@
+/*
+  ArduinoDrive.ino - Small implementation for filesystem style usage on the arduino's eeprom
+  Fun short evening project with no really use except bragging rights
+*/
+
 #include <EEPROM.h>
 
 const int FILE_SIZE = 300;
 const int FILE_COUNT = 3;
-const int META_ADDR = FILE_SIZE * FILE_COUNT; // Metadata starts at 900 out of 1024
+const int META_ADDR = FILE_SIZE * FILE_COUNT; //metadata starts at 900 out of 1024
 
 struct FileMeta {
-  char name[10];     // Always null-terminated
+  char name[10];
   uint16_t length;
 };
 
 FileMeta files[FILE_COUNT];
 
 void setup() {
+  //configure serial
   Serial.begin(9600);
   loadMetadata();
 }
 
 void loop() {
+  //Setup writing a serial from computer
   if (Serial.available()) {
     String cmd = Serial.readStringUntil('\n');
     handleCommand(cmd);
   }
 }
 
-// --- Metadata Handling ---
 void loadMetadata() {
+  //load metadata from eeprom
   for (int i = 0; i < FILE_COUNT; i++) {
     int addr = META_ADDR + i * sizeof(FileMeta);
     for (int j = 0; j < 10; j++) {
       files[i].name[j] = EEPROM.read(addr + j);
     }
-    files[i].name[9] = '\0';  // Ensure null-terminated
+    files[i].name[9] = '\0';  //Null terminate the name
     files[i].length = EEPROM.read(addr + 10) | (EEPROM.read(addr + 11) << 8);
   }
 }
 
 void saveMetadata() {
+  //save metadata to eeprom
   for (int i = 0; i < FILE_COUNT; i++) {
     int addr = META_ADDR + i * sizeof(FileMeta);
     for (int j = 0; j < 9; j++) {
       EEPROM.write(addr + j, files[i].name[j]);
     }
-    EEPROM.write(addr + 9, '\0'); // Always terminate string
+    EEPROM.write(addr + 9, '\0'); //Null terminate the name
     EEPROM.write(addr + 10, files[i].length & 0xFF);
     EEPROM.write(addr + 11, files[i].length >> 8);
   }
 }
 
-// --- Command Handling ---
+
 void handleCommand(String cmd) {
   cmd.trim();
   
@@ -74,7 +82,7 @@ void handleCommand(String cmd) {
     int fileIndex = cmd.substring(11, 12).toInt() - 1;
     String newName = cmd.substring(13);
     newName.trim();
-    if (newName.length() > 9) newName = newName.substring(0, 9); // max 9 chars, last for '\0'
+    if (newName.length() > 9) newName = newName.substring(0, 9); //last char for null terminating
     for (int i = 0; i < 9; i++) {
       files[fileIndex].name[i] = i < newName.length() ? newName[i] : 0;
     }
@@ -91,7 +99,7 @@ void handleCommand(String cmd) {
   }
 }
 
-// --- File Operations ---
+
 void writeFile(int index, String data) {
   if (index < 0 || index >= FILE_COUNT) return;
   if (data.length() > FILE_SIZE) data = data.substring(0, FILE_SIZE);
@@ -104,6 +112,7 @@ void writeFile(int index, String data) {
   saveMetadata();
 }
 
+
 void readFile(int index) {
   if (index < 0 || index >= FILE_COUNT) return;
 
@@ -112,6 +121,7 @@ void readFile(int index) {
     Serial.write(EEPROM.read(addr + i));
   }
 }
+
 
 void deleteFile(int index) {
   if (index < 0 || index >= FILE_COUNT) return;
@@ -127,15 +137,15 @@ void deleteFile(int index) {
   saveMetadata();
 }
 
-// --- Formatting EEPROM ---
+
 void formatEEPROM() {
   for (int i = 0; i < FILE_COUNT; i++) {
-    // Clear file data
+    //clear file data
     int addr = i * FILE_SIZE;
     for (int j = 0; j < FILE_SIZE; j++) {
       EEPROM.write(addr + j, 0);
     }
-    // Clear metadata
+    //clear metadata
     for (int j = 0; j < 10; j++) {
       files[i].name[j] = 0;
     }
